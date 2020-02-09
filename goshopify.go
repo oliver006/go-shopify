@@ -37,9 +37,15 @@ type App struct {
 	Password    string
 }
 
+type RateLimitInfo struct {
+	RequestCount      int
+	BucketSize        int
+	RetryAfterSeconds float64
+}
+
 // Client manages communication with the Shopify API.
 type Client struct {
-	// HTTP client used to communicate with the DO API.
+	// HTTP client used to communicate with the Shopify API.
 	Client *http.Client
 
 	// App settings
@@ -52,6 +58,8 @@ type Client struct {
 
 	// A permanent access token
 	token string
+
+	RateLimits RateLimitInfo
 
 	// Services used for communicating with the API
 	Product                    ProductService
@@ -284,6 +292,15 @@ func (c *Client) Do(req *http.Request, v interface{}) error {
 			return err
 		}
 	}
+
+	if rl := resp.Header.Get("X-Shopify-Shop-Api-Call-Limit"); rl != "" {
+		if s := strings.Split(rl, "/"); len(s) == 2 {
+			c.RateLimits.RequestCount, _ = strconv.Atoi(s[0])
+			c.RateLimits.BucketSize, _ = strconv.Atoi(s[1])
+		}
+	}
+
+	c.RateLimits.RetryAfterSeconds, _ = strconv.ParseFloat(resp.Header.Get("Retry-After"), 64)
 
 	return nil
 }
