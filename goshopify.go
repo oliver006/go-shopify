@@ -50,6 +50,12 @@ type RateLimitInfo struct {
 	RetryAfterSeconds float64
 }
 
+type RateLimitInfo struct {
+	RequestCount      int
+	BucketSize        int
+	RetryAfterSeconds float64
+}
+
 // Client manages communication with the Shopify API.
 type Client struct {
 	// HTTP client used to communicate with the Shopify API.
